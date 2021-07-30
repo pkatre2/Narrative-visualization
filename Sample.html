@@ -1,0 +1,760 @@
+
+<script src='https://d3js.org/d3.v5.min.js'></script>
+<script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+
+<link rel="stylesheet" href="styles.css">
+
+<body onload="showTimeline()">
+
+<!--<body onload="loadConstructorsPage()">-->
+<h1>Formula 1 World Championships (1950 - 2020)</h1>
+<div id="page-1" class="page">
+  <div id="page-1-description" class="page-description">
+    <h3>All Constructors By Cumulative Race Victories</h3>
+
+  </div>
+  <div id="nav-row">
+    <a id="view-toggle-btn" class="button" onclick="toggleTimeline()"></a>
+  </div>
+
+
+  <div id="page-1-vis-wrap" class="float-container">
+    <div id="page-1-vis">
+    </div>
+    <div id="constructor-detail" class="custom-tooltip closed">
+      <table>
+        <tr>
+          <td>Constructor</td>
+          <td id="td-constructor-name" class="data"></td>
+        </tr>
+        <tr>
+          <td>Nationality</td>
+          <td id="td-constructor-nationality" class="data"></td>
+        </tr>
+        <tr>
+          <td>Total Races</td>
+          <td id="td-constructor-races" class="data"></td>
+        </tr>
+        <tr>
+          <td>Total Wins</td>
+          <td id="td-constructor-wins" class="data"></td>
+        </tr>
+      </table>
+    </div>
+    <p>Hover over a constructor's mark for more details. Click on it for drilling down</p>
+    <p>This scene is an overview of all F1 constructors' cumulative win histories plotted as lines. The lines
+      discontinue if there were no more victories for that constructor, irrespective of whether they participated or
+      not. </p>
+    <p>Hovering over the lines or bubbles gives some aggregated information about the constructor.</p>
+    <p><span style="font-weight: bold">Nav Tip: </span>Click on a constructor's mark to go to the next scene, specific
+      to the chosen constructor.</p>
+  </div>
+</div>
+
+</body>
+
+<script id="page-1-script">
+
+  var constructors, races, results;
+
+
+  function showTimeline() {
+
+    document.getElementById("page-1-vis").setAttribute("current-view", "timeline");
+    document.getElementById("view-toggle-btn").innerText = "Switch to Totals";
+    var csv_root = "https://raw.githubusercontent.com/akshatvn/f1/main";
+
+
+    var raceById = {};
+    var constructorById = {};
+    var tooltips = document.querySelectorAll('.float-container .custom-tooltip');
+
+    window.onmousemove = function (e) {
+      var x = (e.clientX + 20) + 'px',
+              y = (e.clientY + 20) + 'px';
+      for (var i = 0; i < tooltips.length; i++) {
+        tooltips[i].style.top = y;
+        tooltips[i].style.left = x;
+      }
+
+
+      // var x1 = d3.event.pageX - document.getElementById("page-1-svg").getBoundingClientRect().x + 10;
+      // var y1 = d3.event.pageY - document.getElementById("page-1-svg").getBoundingClientRect().y + 10;
+      // // console.log("x, y", x1,y1);
+
+    };
+
+    var margin = {top: 20, right: 20, bottom: 30, left: 100},
+            width = 960 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+
+    var xScale = d3.scaleLinear().range([0, width]);
+    var yScale = d3.scaleLinear().rangeRound([height, 0]);
+
+    var yaxis = d3.axisLeft().scale(yScale);
+    var xaxis = d3.axisBottom().scale(xScale).tickFormat(d3.format("d"));
+
+    function make_x_gridlines() {
+      return d3.axisBottom(xScale)
+              .ticks(5)
+    }
+
+    // gridlines in y axis function
+    function make_y_gridlines() {
+      return d3.axisLeft(yScale)
+              .ticks(5)
+    }
+
+
+    var svg = d3.select("#page-1-vis").append("svg")
+            .attr("id", "page-1-svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.on("mouseover", function () {
+      var coordinates = d3.mouse(this);
+      var x1 = coordinates[0];
+      var y1 = coordinates[1];
+      // console.log("x1,y1", x1, y1);
+    });
+
+    svg.append("g")
+            .attr("class", "axis")
+            .attr("class", "myXaxis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xaxis)
+            .call(g => g.append("text")
+                    .attr("x", width / 2)
+                    .attr("y", margin.bottom)
+                    .attr("fill", "currentColor")
+                    .attr("text-anchor", "end")
+                    .text("Year"));
+
+    svg.append("g")
+            .attr("class", "axis")
+            .attr("class", "myYaxis")
+            .call(yaxis)
+            .call(g => g.append("text")
+                    .attr("x", -40)
+                    .attr("y", height / 2)
+                    .attr("fill", "currentColor")
+                    .attr("text-anchor", "end")
+                    .text("Wins"));
+
+
+    var line = d3.line()
+            .x(function (d) {
+              return xScale(d.year);
+            })
+            .y(function (d) {
+              return !d.wins ? null : yScale(d.wins);
+            });
+
+
+    svg.append("g")
+            .attr("class", "grid")
+            .attr("transform", "translate(0," + height + ")")
+            .call(make_x_gridlines()
+                    .tickSize(-height)
+                    .tickFormat("")
+            );
+
+
+    svg.append("g")
+            .attr("class", "grid")
+            .call(make_y_gridlines()
+                    .tickSize(-width)
+                    .tickFormat("")
+            );
+
+    var focus = svg.append("g")
+            .attr("class", "focus")
+            .style("display", "none");
+
+    focus.append("circle")
+            .attr("r", 5);
+
+    focus.append("rect")
+            .attr("class", "tooltip")
+            .attr("width", 100)
+            .attr("height", 50)
+            .attr("x", 10)
+            .attr("y", -22)
+            .attr("rx", 4)
+            .attr("ry", 4);
+
+    focus.append("text")
+            .attr("class", "tooltip-year")
+            .attr("x", 18)
+            .attr("y", -2);
+
+    focus.append("text")
+            .attr("x", 18)
+            .attr("y", 18)
+            .text("Wins:");
+
+    focus.append("text")
+            .attr("class", "tooltip-wins")
+            .attr("x", 60)
+            .attr("y", 18);
+
+
+    async function loadAllData() {
+      if (!constructors) {
+        constructors = await d3.csv(csv_root + "/data/constructors.csv");
+        delete constructors.columns;
+      }
+
+      if (!races) {
+        races = await d3.csv(csv_root + "/data/races.csv");
+        delete races.columns;
+      }
+
+      if (!results) {
+        results = await d3.csv(csv_root + "/data/results.csv");
+        delete results.columns;
+      }
+      for (i = 0; i < races.length; i++) {
+        raceById[races[i].raceId] = races[i];
+      }
+      for (i = 0; i < constructors.length; i++) {
+        constructorById[constructors[i].constructorId] = constructors[i];
+      }
+
+      for (i = 0; i < results.length; i++) {
+        constructorById[results[i].constructorId].wins = constructorById[results[i].constructorId].wins || 0;
+        constructorById[results[i].constructorId].races = constructorById[results[i].constructorId].races || 0;
+        constructorById[results[i].constructorId].races += 1;
+        if (results[i].position === "1") {
+          constructorById[results[i].constructorId].wins += 1;
+        }
+      }
+
+      loadPage1Timeline();
+    }
+
+    function loadPage1Timeline() {
+      page1DataByYear = {};
+      page1DataByConstructor = {};
+      for (i = 0; i < results.length; i++) {
+        let result = results[i];
+        if (result['position'] === "1") {
+          let race = raceById[result.raceId];
+          if (!race) {
+            console.error("could not find race with ID ", result.raceId);
+          } else {
+            let resultYear = raceById[result.raceId].year;
+            // let constructorName = constructorById[result.constructorId].name;
+            page1DataByYear[resultYear] = page1DataByYear[resultYear] || {};
+            page1DataByYear[resultYear][result.constructorId] = page1DataByYear[resultYear][result.constructorId] || 0;
+            page1DataByYear[resultYear][result.constructorId] += 1
+          }
+        }
+      }
+
+      // console.log("page1DataByYear", page1DataByYear);
+      for (year in page1DataByYear) {
+        for (constructorId in page1DataByYear[year]) {
+          page1DataByConstructor[constructorId] = page1DataByConstructor[constructorId] || [];
+          page1DataByConstructor[constructorId].push({
+            year: year,
+            wins: page1DataByYear[year][constructorId],
+            // cumulativeWins:
+          })
+        }
+      }
+
+      // console.log("page1DataByConstructor", page1DataByConstructor);
+
+      // // console.log("page1DataByConstructor", page1DataByConstructor);
+      yearlyWinData = [];
+      for (constructorId in page1DataByConstructor) {
+        yearlyWinData.push({
+                  constructorId: constructorId,
+                  values: page1DataByConstructor[constructorId]
+                }
+        )
+      }
+
+
+      // page1Data = [];
+
+      // // console.log("page1Data", page1Data);
+
+      // console.log("yearlyWinData", yearlyWinData);
+      // updateLineChart(yearlyWinData);
+
+      // // console.log("yearlyWinData", yearlyWinData);
+
+      cumulativeWinData = [];
+      cumulativeByConstructor = {};
+      for (year in page1DataByYear) {
+        for (constructorId in page1DataByYear[year]) {
+          cumulativeByConstructor[constructorId] = cumulativeByConstructor[constructorId] || {};
+          cumulativeByConstructor[constructorId]['so_far'] = cumulativeByConstructor[constructorId]['so_far'] || 0;
+          cumulativeByConstructor[constructorId]['so_far'] += +page1DataByYear[year][constructorId];
+          cumulativeByConstructor[constructorId]['values'] = cumulativeByConstructor[constructorId]['values'] || []
+          cumulativeByConstructor[constructorId]['values'].push({
+            year: year,
+            wins: cumulativeByConstructor[constructorId]['so_far']
+          })
+
+        }
+
+      }
+
+      for (constructorId in cumulativeByConstructor) {
+        cumulativeWinData.push({
+                  constructorId: constructorId,
+                  values: cumulativeByConstructor[constructorId]['values']
+                }
+        )
+      }
+
+      // console.log("cumulativeByConstructor", cumulativeByConstructor);
+
+
+      // console.log("cumulativeWinData", cumulativeWinData);
+
+      // window.setTimeout(function () {
+      updateLineChart(cumulativeWinData, [handleMouseOver, handleMouseOut, handleMouseClick]);
+      // updateLineChart(yearlyWinData, [handleMouseOver, handleMouseOut, handleMouseClick]);
+      // updateLineChart(yearlyWinData, [handleMouseOver, handleMouseOut, handleMouseClick]);
+      // }, 5000)
+
+      // window.setTimeout(function () {
+      //   updateLineChart(yearlyWinData);
+      // }, 3000);
+    }
+
+
+    // [
+    //   {
+    //    constructorId: '51'
+    //    values: [
+    //      {'1950': 6}
+    //       {}
+    //    ]
+    //   }
+    // ]
+    function updateLineChart(formattedData, mouseHandlers) {
+      xScale.domain([
+        d3.min(formattedData, function (c) {
+          return d3.min(c.values, function (d) {
+            return d.year;
+          });
+        }),
+        d3.max(formattedData, function (c) {
+          return d3.max(c.values, function (d) {
+            return d.year;
+          });
+        })
+      ]);
+
+      yScale.domain([
+        0,
+        d3.max(formattedData, function (c) {
+          return d3.max(c.values, function (d) {
+            return d.wins + 4;
+          });
+        })
+      ]);
+      svg.selectAll(".myXaxis").transition()
+              .duration(1500)
+              .call(xaxis);
+
+      svg.selectAll(".myYaxis")
+              .transition()
+              .duration(1500)
+              .call(yaxis);
+
+      const lines = svg.selectAll("chartLine")
+              .data(formattedData)
+              .enter()
+              .append("g")
+              .append("path")
+              .attr("class", "chartLine")
+              .attr("d", function (d) {
+                return line(d.values);
+              })
+              .attr("constructor-id", function (d) {
+                return d.constructorId;
+              })
+              .attr("stroke", function (d) {
+                return constructorById[d.constructorId].color;
+              })
+              .attr("stroke-width", 4);
+      ;
+
+
+      lines
+              .merge(lines)
+              .transition()
+              .duration(1500);
+
+
+      lines.on("mouseover", mouseHandlers[0])
+              .on("mouseout", mouseHandlers[1])
+              .on("click", mouseHandlers[2]);
+
+
+      const annotations = [
+        {
+          note: {
+            label: "Just before Shumacher joined, McLaren came this close to overtaking Ferrari",
+            title: "Ferrari's slowest years"
+          },
+          x: 536,
+          y: 254,
+          dy: -70,
+          dx: -100
+        },
+        {
+          note: {
+            label: "More than 10 wins every year since 2014!",
+            title: "Mercedes is back"
+          },
+          x: 750,
+          y: 428,
+          dy: -60,
+          dx: -40
+        },
+        {
+          note: {
+            title: "Vettel quits red bull"
+          },
+          x: 765,
+          y: 362,
+          dy: -120,
+          dx: -10
+        }
+      ];
+
+      const makeAnnotations = d3.annotation()
+              // .editMode(true)
+              .annotations(annotations);
+      svg
+              .append("g")
+              .call(makeAnnotations)
+    }
+
+
+    function handleMouseOver(d, i) {
+      document.getElementById('constructor-detail').classList.remove('closed');
+      populateCurrentConstructorTable(constructorById[d.constructorId]);
+    }
+
+    function populateCurrentConstructorTable(selectedConstructor) {
+      document.getElementById("td-constructor-name").innerHTML = selectedConstructor.name;
+      document.getElementById("td-constructor-nationality").innerHTML = selectedConstructor.nationality;
+      document.getElementById("td-constructor-races").innerHTML = selectedConstructor.races;
+      document.getElementById("td-constructor-wins").innerHTML = selectedConstructor.wins;
+    }
+
+    function handleMouseOut(d, i) {
+      document.getElementById('constructor-detail').classList.add('closed');
+      selectedConstructor = null;
+      clearCurrentConstructorTable();
+    }
+
+    function clearCurrentConstructorTable() {
+      document.getElementById("td-constructor-name").innerHTML = '';
+      document.getElementById("td-constructor-nationality").innerHTML = '';
+      document.getElementById("td-constructor-races").innerHTML = '';
+      document.getElementById("td-constructor-wins").innerHTML = '';
+    }
+
+    loadAllData();
+  }
+
+  var constructor_arr = [];
+
+  // BUBBLES
+  async function showBubbles() {
+
+    document.getElementById("view-toggle-btn").innerText = "Switch to Timeline";
+    var csv_root = "https://raw.githubusercontent.com/akshatvn/f1/main";
+    var constructors, races, results;
+
+
+    var raceById = {};
+    var constructorById = {};
+    var tooltips = document.querySelectorAll('.float-container .custom-tooltip');
+    document.getElementById("page-1-vis").setAttribute("current-view", "bubbles");
+    if (!constructors) {
+      constructors = await d3.csv(csv_root + "/data/constructors.csv");
+      delete constructors.columns;
+    }
+
+    if (!races) {
+      races = await d3.csv(csv_root + "/data/races.csv");
+      delete races.columns;
+    }
+
+
+    if (!results) {
+      results = await d3.csv(csv_root + "/data/results.csv");
+      delete results.columns;
+    }
+
+    // console.log("constructors", constructors);
+
+
+    contructor_wins = {};
+    for (i = 0; i < results.length; i++) {
+      let record = results[i];
+      if (!contructor_wins[record.constructorId]) {
+        let currentConstructor = constructors.find(c => c.constructorId == record.constructorId)
+        contructor_wins[record.constructorId] = {
+          id: record.constructorId,
+          entityId: record.constructorId,
+          entityType: "constructor",
+          name: (currentConstructor).name,
+          wins: 0,
+          races: 0,
+          nationality: currentConstructor.nationality,
+          color: (currentConstructor).color,
+          driver_ids: [],
+          bubbleRadius: 0
+        }
+      }
+      if (record.position === "1") {
+        contructor_wins[record.constructorId].wins += 1;
+
+      }
+      contructor_wins[record.constructorId].races += 1;
+      contructor_wins[record.constructorId].bubbleRadius = contructor_wins[record.constructorId].wins;
+    }
+
+    // console.log("contructor_wins: ", contructor_wins);
+    for (const constructorId in contructor_wins) {
+      constructor_arr.push(contructor_wins[constructorId])
+    }
+    constructor_arr = constructor_arr.sort((a, b) => a.wins < b.wins ? 1 : -1)
+    // console.log("constructor_arr: ", constructor_arr);
+    display([], '#page-1-vis');
+    display(constructor_arr, '#page-1-vis');
+    document.getElementById('page-1').classList.toggle('closed');
+  }
+
+  function bubbleChart(visId) {
+    const width = 960;
+    const height = 500;
+
+    let forceStrength = 0.04; // magic number
+
+    const center = {x: width / 2, y: height / 2};
+
+    let svg = null;
+    let bubbles = null;
+    let labels = null;
+    let nodes = [];
+
+    let simulation = d3.forceSimulation()
+            .force('charge', d3.forceManyBody().strength(d => Math.pow(d.radius, 2.0) * 0.04))
+            .force('x', d3.forceX().strength(forceStrength).x(center.x))
+            .force('y', d3.forceY().strength(forceStrength).y(center.y))
+            .force('center', d3.forceCenter(center.x, center.y));
+
+    // .force('collision', d3.forceCollide().radius(d => d.radius * 1.25));
+
+    if (visId == '#page-1-vis') {
+      window.setTimeout(function () {
+        simulation =
+                simulation.force('collision', d3.forceCollide().radius(d => d.radius * 1.25));
+      }, 500);
+    } else {
+      simulation =
+              simulation.force('collision', d3.forceCollide().radius(d => d.radius * 1.25));
+    }
+
+
+    function createNodes(rawData) {
+      // if (ignoreZeros) {
+      rawData = rawData.filter(d => d.wins > 0);
+      // }
+
+      const maxSize = d3.max(rawData, d => 4 + (+d.wins) * 5);
+
+      const radiusScale = d3.scaleSqrt()
+              .domain([0, maxSize])
+              .range([0, height / 9]);
+
+      const myNodes = rawData.map(d => ({
+        ...d,
+        radius: radiusScale(4 + (+d.wins) * 5),
+        minYear: d.minYear,
+        // size: +d.wins,
+        x: (Math.random() - 0.5) * width,
+        y: (Math.random() - 0.5) * height
+      }));
+
+      return myNodes;
+    }
+
+    // main entry point to bubble chart, returned by parent closure
+    // prepares rawData for visualisation and adds an svg element to the provided selector and starts the visualisation process
+    let chart = function chart(selector, rawData) {
+      // convert raw data into nodes data
+      nodes = createNodes(rawData);
+
+      d3.select(selector).select('svg').remove();
+
+      // create svg element inside provided selector
+      svg = d3.select(selector)
+              .append('svg')
+              .attr('width', width)
+              .attr('height', height)
+              .attr('style', 'backgound: lightgray;');
+
+      // bind nodes data to circle elements
+      const elements = svg.selectAll('.bubble')
+              .data(nodes, d => d.id)
+              .enter()
+              .append('g');
+
+      bubbles = elements
+              .append('circle')
+              .classed('bubble', true)
+              .attr('r', d => d.radius)
+              .attr('constructor-id', d => d.entityId)
+              .attr('entity-type', d => d.entityType)
+              .attr('fill', function (d) {
+                if (!!d.color && d.color != "") {
+                  return d.color;
+                }
+                return defaultConstructorColor;
+              })
+              .attr('stroke', d => invertColor(d.color))
+              .attr('stroke-width', 1)
+              .on("mouseover", handleMouseOverBubble)
+              .on("mouseout", handleMouseOutBubble)
+              .on("click", handleMouseClick);
+
+      // labels
+      labels = elements
+              .append('text')
+              .attr('constructor-id', d => d.id)
+              .classed('bubble-label', true)
+              .attr('dy', '.3em')
+              .attr('id', d => "bubble-label-" + d.id)
+              .style('text-anchor', 'middle')
+              .style('font-size', 12)
+              .style('fill', d => invertColor(d.color))
+              .text(d => d.wins > 45 ? d.name + ": " + d.wins : "");
+
+      simulation.nodes(nodes)
+              .on('tick', ticked)
+              .restart();
+    };
+
+    function ticked() {
+      bubbles
+              .attr('cx', d => d.x)
+              .attr('cy', d => d.y);
+
+      labels
+              .attr('x', d => d.x)
+              .attr('y', d => d.y);
+    }
+
+    // return chart function from closure
+    return chart;
+  }
+
+  function display(data, visId) {
+    let myBubbleChart = bubbleChart(visId);
+    myBubbleChart(visId, data);
+  }
+
+  // function to find color of font to be written on top of bubble (for contrast)
+  function invertColor(hex) {
+    function padZero(str, len) {
+      len = len || 2;
+      var zeros = new Array(len).join('0');
+      return (zeros + str).slice(-len);
+    }
+
+    if (!hex) {
+      hex = defaultConstructorColor;
+    }
+    if (hex.indexOf('#') === 0) {
+      hex = hex.slice(1);
+    }
+    if (hex.length === 3) {
+      hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+    if (hex.length !== 6) {
+      hex = defaultConstructorColor;
+    }
+    var r = (255 - parseInt(hex.slice(0, 2), 16)).toString(16),
+            g = (255 - parseInt(hex.slice(2, 4), 16)).toString(16),
+            b = (255 - parseInt(hex.slice(4, 6), 16)).toString(16);
+    return '#' + padZero(r) + padZero(g) + padZero(b);
+  }
+
+
+  // Create Event Handlers for mouse
+  function handleMouseOverBubble(d, i) {  // Add interactivity
+    document.getElementById('constructor-detail').classList.toggle('closed');
+    selectedConstructor = constructor_arr.find(c => c.id == d.id);
+    populateCurrentConstructorTable(selectedConstructor);
+    d3.select(this).attr("r", d.radius * 1.2);
+  }
+
+  function handleMouseOutBubble(d, i) {
+    document.getElementById('constructor-detail').classList.toggle('closed');
+    selectedConstructor = null;
+    clearCurrentConstructorTable();
+    d3.select(this).attr("r", d.radius);
+  }
+
+  function populateCurrentConstructorTable(selectedConstructor) {
+    document.getElementById("td-constructor-name").innerHTML = selectedConstructor.name;
+    document.getElementById("td-constructor-nationality").innerHTML = selectedConstructor.nationality;
+    document.getElementById("td-constructor-races").innerHTML = selectedConstructor.races;
+    document.getElementById("td-constructor-wins").innerHTML = selectedConstructor.wins;
+  }
+
+  function clearCurrentConstructorTable() {
+    document.getElementById("td-constructor-name").innerHTML = '';
+    document.getElementById("td-constructor-nationality").innerHTML = '';
+    document.getElementById("td-constructor-races").innerHTML = '';
+    document.getElementById("td-constructor-wins").innerHTML = '';
+  }
+
+  function handleMouseClickBubble(d, i) {
+    selectedConstructor = constructor_arr.find(c => c.id == d.id);
+    // console.log("selected constructor", selectedConstructor);
+    document.getElementById('page-1').classList.toggle('closed');
+    handleMouseClick();
+  }
+
+  function toggleTimeline() {
+    document.getElementById("page-1-vis").innerHTML = "";
+    if (document.getElementById("page-1-vis").getAttribute("current-view") == "timeline") {
+      showBubbles();
+    } else {
+      window.location.reload();
+    }
+  }
+
+  function handleMouseClick(d, i) {
+
+    let split_path = window.location.pathname.split("/");
+    let redirectPath = split_path.slice(0, split_path.length - 1);
+    redirectPath.push("constructor_drivers.html");
+    let basePath = redirectPath.join("/") + `?c=${this.getAttribute("constructor-id")}`
+    // if (document.getElementById("page-1-vis").getAttribute("current-view") == "timeline") {
+    window.location = basePath;
+    // } else {
+    //   if (document.getElementById("page-1-vis").getAttribute("current-view") == "timeline") {
+    //     window.location = basePath + '&b=1';
+    //   }
+    // }
+
+  }
+</script>

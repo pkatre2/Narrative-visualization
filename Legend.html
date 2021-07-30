@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Create a div where the graph will take place -->
+<div>
+  <svg id="my_dataviz" height=500 width=550></svg>
+</div>
+
+<script>
+
+  // select the svg area
+  var svg = d3.select("#my_dataviz")
+
+  // Handmade legend
+  svg.append("circle").attr("cx",400).attr("cy",430).attr("r", 6).style("fill", "#440154ff")
+  svg.append("circle").attr("cx",400).attr("cy",460).attr("r", 6).style("fill", "#21908dff")
+  svg.append("text").attr("x", 420).attr("y", 430).text("Private").style("font-size", "15px").attr("alignment-baseline","Right")
+  svg.append("text").attr("x", 420).attr("y", 460).text("Public").style("font-size", "15px").attr("alignment-baseline","Right")
+
+</script>

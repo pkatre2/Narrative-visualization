@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+//code added by sgitey
+    <style>
+        .chart-wrapper {
+            width: 100%;
+            height: 100%;
+            background-color: #0d0d0d;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+//start of the code
+<div class="slideshow-container">
+<!-- Load d3.js -->
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+<!-- Create a div where the graph will take place -->
+
+ <div id="my_dataviz" class="step a">
+     <div class="numbertext">1/2</div>
+    <script>
+  // set the dimensions and margins of the graph
+  var margin = {top: 10, right: 30, bottom: 30, left: 60},
+          //width = 460 - margin.left - margin.right,
+          //height = 400 - margin.top - margin.bottom;
+          width = 700 - margin.left - margin.right,
+          height = 700 - margin.top - margin.bottom;
+
+
+  // append the svg object to the body of the page
+  var svg = d3.select("#my_dataviz")
+          .append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+          .attr("transform",
+                  "translate(" + margin.left + "," + margin.top + ")");
+
+  //Read the data
+  //d3.csv("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/2_TwoNum.csv", function(data) {
+    d3.csv("ForbesAmericasTopColleges2019.csv", function(data) {
+    // Add X axis
+    var x = d3.scaleLinear()
+            .domain([0, 120])
+            .range([ 0, width ]);
+    svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x));
+
+    // Add Y axis
+    var y = d3.scaleLinear()
+            .domain([0, 700])
+            .range([ height, 0]);
+    svg.append("g")
+            .call(d3.axisLeft(y));
+
+    //Piyush Add
+      var color = d3.scaleOrdinal()
+              .domain(["Private", "Public" ])
+              .range([ "#440154ff", "#21908dff"])
+
+      // Highlight
+      var highlight = function(d){
+
+        selected_cat = d.Public_Private
+
+        d3.selectAll(".dot")
+                .transition()
+                .duration(200)
+                .style("fill", "lightgrey")
+                .attr("r", 50)
+
+        d3.selectAll("." + selected_cat)
+                .transition()
+                .duration(200)
+                .style("fill", color(selected_cat))
+                .attr("r", 50)
+      }
+
+      // Highlight
+      var doNotHighlight = function(){
+        d3.selectAll(".dot")
+                .transition()
+                .duration(200)
+                .style("fill", "lightgrey")
+                .attr("r", 50 )
+      }
+
+      // Add X axis label:
+      svg.append("text")
+              .attr("text-anchor", "end")
+              .attr("x", width/2 + margin.left)
+              .attr("y", height + margin.top + 20)
+              .text("AcceptanceRate");
+
+      // Y axis label:
+      svg.append("text")
+              .attr("text-anchor", "end")
+              .attr("transform", "rotate(-90)")
+              .attr("y", -margin.left + 20)
+              .attr("x", -margin.top - height/2 + 20)
+              .text("Rank")
+
+  //Legend starts here
+      // select the svg area
+      //var svg = d3.select("#my_dataviz")
+
+      // Handmade legend
+      svg.append("circle").attr("cx",550).attr("cy",530).attr("r", 6).style("fill", "#440154ff")
+      svg.append("circle").attr("cx",550).attr("cy",560).attr("r", 6).style("fill", "#21908dff")
+      svg.append("text").attr("x", 570).attr("y", 530).text("Private").style("font-size", "15px").attr("alignment-baseline","Right")
+      svg.append("text").attr("x", 570).attr("y", 560).text("Public").style("font-size", "15px").attr("alignment-baseline","Right")
+
+
+          //piyush Finish
+
+    // Add dots
+    svg.append('g')
+            .selectAll("dot")
+            .data(data)
+            .enter()
+            .append("circle")
+            .attr("cx", function (d) { return x(d.AcceptanceRate); } )
+            .attr("cy", function (d) { return y(d.Rank); } )
+            .attr("r", 3)
+            //.style("fill", "#69b3a2")
+            .style("fill", function (d) { return color(d.Public_Private) } )
+            .on("mouseover", highlight)
+            .on("mouseleave", doNotHighlight )
+
+  })
+
+    </script>
+
+</div>
+    <div id="my_dataviz1" class="step">
+        <div class="numbertext">2 / 3</div>
+        <script src="https://d3js.org/d3.v4.js"></script>
+        <script>
+            // set the dimensions and margins of the graph
+            var margin = {top: 10, right: 30, bottom: 30, left: 60},
+                //width = 460 - margin.left - margin.right,
+                //height = 400 - margin.top - margin.bottom;
+                width = 700 - margin.left - margin.right,
+                height = 700 - margin.top - margin.bottom;
+            // append the svg object to the body of the page
+            var svg1 = d3.select("#my_dataviz1")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")");
+
+            //Read the data
+            //d3.csv("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/2_TwoNum.csv", function(data) {
+            d3.csv("ForbesAmericasTopColleges2019.csv", function(data) {
+                // Add X axis
+                var x = d3.scaleLinear()
+                    .domain([0, 120])
+                    .range([ 0, width ]);
+                svg1.append("g")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(x));
+
+                // Add Y axis
+                var y = d3.scaleLinear()
+                    .domain([0, 700])
+                    .range([ height, 0]);
+                svg1.append("g")
+                    .call(d3.axisLeft(y));
+
+                //Piyush Add
+                var color = d3.scaleOrdinal()
+                    .domain(["Private", "Public" ])
+                    .range([ "#440154ff", "#21908dff"])
+
+                // Highlight
+                var highlight = function(d){
+
+                    selected_cat = d.Public_Private
+
+                    d3.selectAll(".dot")
+                        .transition()
+                        .duration(200)
+                        .style("fill", "lightgrey")
+                        .attr("r", 50)
+
+                    d3.selectAll("." + selected_cat)
+                        .transition()
+                        .duration(200)
+                        .style("fill", color(selected_cat))
+                        .attr("r", 50)
+                }
+
+                // Highlight
+                var doNotHighlight = function(){
+                    d3.selectAll(".dot")
+                        .transition()
+                        .duration(200)
+                        .style("fill", "lightgrey")
+                        .attr("r", 50 )
+                }
+
+                // Add X axis label:
+                svg1.append("text")
+                    .attr("text-anchor", "end")
+                    .attr("x", width/2 + margin.left)
+                    .attr("y", height + margin.top + 20)
+                    .text("NetPrice");
+
+                // Y axis label:
+                svg1.append("text")
+                    .attr("text-anchor", "end")
+                    .attr("transform", "rotate(-90)")
+                    .attr("y", -margin.left + 20)
+                    .attr("x", -margin.top - height/2 + 20)
+                    .text("Rank")
+
+                //Legend starts here
+                // select the svg area
+                //var svg = d3.select("#my_dataviz")
+
+                // Handmade legend
+                svg1.append("circle").attr("cx",550).attr("cy",530).attr("r", 6).style("fill", "#440154ff")
+                svg1.append("circle").attr("cx",550).attr("cy",560).attr("r", 6).style("fill", "#21908dff")
+                svg1.append("text").attr("x", 570).attr("y", 530).text("Private").style("font-size", "15px").attr("alignment-baseline","Right")
+                svg1.append("text").attr("x", 570).attr("y", 560).text("Public").style("font-size", "15px").attr("alignment-baseline","Right")
+
+
+                //piyush Finish
+
+                // Add dots
+                svg1.append('g')
+                    .selectAll("dot")
+                    .data(data)
+                    .enter()
+                    .append("circle")
+                    .attr("cx", function (d) { return x(d.Net_Price); } )
+                    .attr("cy", function (d) { return y(d.Rank); } )
+                    .attr("r", 3)
+                    //.style("fill", "#69b3a2")
+                    .style("fill", function (d) { return color(d.Public_Private) } )
+                    .on("mouseover", highlight)
+                    .on("mouseleave", doNotHighlight )
+
+            })
+
+        </script>
+    </div>
+</div>
+<div id="my_dataviz2" class="step">
+    <div class="numbertext">3/ 3</div>
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <script>
+        // set the dimensions and margins of the graph
+        var margin = {top: 10, right: 30, bottom: 30, left: 60},
+            //width = 460 - margin.left - margin.right,
+            //height = 400 - margin.top - margin.bottom;
+            width = 700 - margin.left - margin.right,
+            height = 700 - margin.top - margin.bottom;
+        // append the svg object to the body of the page
+        var svg2 = d3.select("#my_dataviz2")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+
+        //Read the data
+        //d3.csv("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/2_TwoNum.csv", function(data) {
+        d3.csv("ForbesAmericasTopColleges2019.csv", function(data) {
+            // Add X axis
+            var x = d3.scaleLinear()
+                .domain([0, 120])
+                .range([ 0, width ]);
+            svg2.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x));
+
+            // Add Y axis
+            var y = d3.scaleLinear()
+                .domain([0, 700])
+                .range([ height, 0]);
+            svg2.append("g")
+                .call(d3.axisLeft(y));
+
+            //Piyush Add
+            var color = d3.scaleOrdinal()
+                .domain(["Private", "Public" ])
+                .range([ "#440154ff", "#21908dff"])
+
+            // Highlight
+            var highlight = function(d){
+
+                selected_cat = d.Public_Private
+
+                d3.selectAll(".dot")
+                    .transition()
+                    .duration(200)
+                    .style("fill", "lightgrey")
+                    .attr("r", 50)
+
+                d3.selectAll("." + selected_cat)
+                    .transition()
+                    .duration(200)
+                    .style("fill", color(selected_cat))
+                    .attr("r", 50)
+            }
+
+            // Highlight
+            var doNotHighlight = function(){
+                d3.selectAll(".dot")
+                    .transition()
+                    .duration(200)
+                    .style("fill", "lightgrey")
+                    .attr("r", 50 )
+            }
+
+            // Add X axis label:
+            svg2.append("text")
+                .attr("text-anchor", "end")
+                .attr("x", width/2 + margin.left)
+                .attr("y", height + margin.top + 20)
+                .text("NetPrice");
+
+            // Y axis label:
+            svg2.append("text")
+                .attr("text-anchor", "end")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -margin.left + 20)
+                .attr("x", -margin.top - height/2 + 20)
+                .text("Rank")
+
+            //Legend starts here
+            // select the svg area
+            //var svg = d3.select("#my_dataviz")
+
+            // Handmade legend
+            svg2.append("circle").attr("cx",550).attr("cy",530).attr("r", 6).style("fill", "#440154ff")
+            svg2.append("circle").attr("cx",550).attr("cy",560).attr("r", 6).style("fill", "#21908dff")
+            svg2.append("text").attr("x", 570).attr("y", 530).text("Private").style("font-size", "15px").attr("alignment-baseline","Right")
+            svg2.append("text").attr("x", 570).attr("y", 560).text("Public").style("font-size", "15px").attr("alignment-baseline","Right")
+
+
+            //piyush Finish
+
+            // Add dots
+            svg2.append('g')
+                .selectAll("dot")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("cx", function (d) { return x(d.Net_Price); } )
+                .attr("cy", function (d) { return y(d.Rank); } )
+                .attr("r", 3)
+                //.style("fill", "#69b3a2")
+                .style("fill", function (d) { return color(d.Public_Private) } )
+                .on("mouseover", highlight)
+                .on("mouseleave", doNotHighlight )
+
+        })
+
+    </script>
+</div>
+    <button class="w3-button w3-black w3-display-left" onclick="plusDivs(-1)">&#10094;</button>
+    <button class="w3-button w3-black w3-display-right" onclick="plusDivs(1)">&#10095;</button>
+
+</div>
+
+<script>
+    var slideIndex = 1;
+    showDivs(slideIndex);
+
+    function plusDivs(n) {
+        showDivs(slideIndex += n);
+    }
+    function showDivs(n) {
+        var i;
+        var x = document.getElementsByClassName("step");
+        if (n > x.length) {slideIndex = 1}
+        if (n < 1) {slideIndex = x.length}
+        for (i = 0; i < x.length; i++) {
+            x[i].style.display = "none";
+        }
+        x[slideIndex-1].style.display = "block";
+    }
+</script>
+</body>
+</html>
