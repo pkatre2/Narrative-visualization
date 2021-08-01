@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <style>
+    .chart-wrapper {
+      width: 100%;
+      height: 100%;
+      background-color: #0d0d0d;
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+
+
+<div class="slideshow-container">
+
+  <script src="https://d3js.org/d3.v4.js"></script>
+  <script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+
+  <div id="piyush_dv" class="step a">
+    <div class="numbertext"></div>
+    <h2>Scene:1/4 | GradesVSAlcohol</h2>
+    <p> Tooltip – hover over circles in Scatterplot to see details on demand, Tooltip pops up at bottom</p>
+
+    <script>
+      var margin = {top: 10, right: 30, bottom: 30, left: 120},
+              width = 800 - margin.left - margin.right,
+              height = 600 - margin.top - margin.bottom;
+
+      var svg = d3.select("#piyush_dv")
+              .append("svg")
+              .attr("width", width + margin.left + margin.right)
+              .attr("height", height + margin.top + margin.bottom)
+              .append("g")
+              .attr("transform","translate(" + margin.left + "," + margin.top + ")");
+
+
+      d3.csv("https://raw.githubusercontent.com/pkatre2/Final_DV_project/main/GradesVSAlcohol_Sheet.csv", function(data) {
+//      d3.csv("GradesVSAlcohol_Sheet.csv", function(data) {
+        var x = d3.scaleLinear()
+                .domain([0, 6])
+                .range([ 0, width ]);
+
+        svg.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x));
+
+
+        var y = d3.scaleLinear()
+                .domain([0, 13])
+                .range([ height, 0]);
+
+       svg.append("g")
+                .call(d3.axisLeft(y));
+
+
+        var color = d3.scaleOrdinal()
+                .domain(["F", "M" ])
+                .range([ "Maroon", "orange"])
+
+
+       svg.append("text")
+                .attr("text-anchor", "end")
+                .attr("x", width/2 + margin.left)
+                .attr("y", height + margin.top + 20)
+                .text("WorkDay Alcohol Consumption");
+
+       svg.append("text")
+                .attr("text-anchor", "end")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -margin.left + 70)
+                .attr("x", -margin.top - height/2 + 20)
+                .text("Final Grades")
+
+
+        var Tooltip = d3.select("#piyush_dv")
+                .append("div")
+                .style("opacity", 0)
+                .attr("class", "tooltip")
+                .style("background-color", "white")
+                .style("border", "solid")
+                .style("border-width", "2px")
+                .style("border-radius", "5px")
+                .style("padding", "5px")
+
+
+        var mousemove = function(d) {
+          Tooltip
+                  .style("opacity", 1)
+                  d3.select(this).transition
+                  .style("stroke", "black")
+                  .style("opacity", 1)
+        }
+        var mouseover = function(d) {
+          Tooltip
+                  .text("Age:"+d.Age+"|Sex:"+d.Sex +"|Grade:"+d.Grade+"|Avg. WorkDay Alcohol Consumption:"+d.Dalc+"| Avg. Weekend Alcohol Consumption:"+d.Walc+"| Health Score:"+d.Health)
+                  .style("left",  (d3.mouse(this)[1]) + "px")
+                  .style("top", (d3.mouse(this)[0]) + "px")
+        }
+
+        var mouseleave = function(d) {
+          Tooltip
+                  .style("opacity", 0)
+          d3.select(this)
+                  .style("stroke", "none")
+                  .style("opacity", 0.8)
+        }
+
+        //Annotation
+        const DV_Annotation = [
+          {
+            note: {
+              label: "decreasing Alcohol consumption and better Grades as they Age",
+              title: "Girls are Smart"
+            },
+            type: d3.annotationCalloutRect,
+            subject: {
+              width: 100,
+              height: 200
+            },
+            x: 55,
+            y: 20,
+            dy: 350,
+            dx: 50
+          }
+        ]
+
+       const DV_Annotation_const = d3.annotation()
+                .annotations(DV_Annotation)
+        svg
+                .append("g")
+                .call(DV_Annotation_const)
+
+        // legend
+        svg.append("circle").attr("cx",450).attr("cy",30).attr("r", 7).style("fill", "maroon")
+        svg.append("circle").attr("cx",450).attr("cy",60).attr("r", 7).style("fill", "orange")
+        svg.append("text").attr("x", 470).attr("y", 30).text("Female").style("font-size", "15px").attr("alignment-baseline","Right")
+        svg.append("text").attr("x", 470).attr("y", 60).text("Male").style("font-size", "15px").attr("alignment-baseline","Right")
+
+
+        svg.append('g')
+                .selectAll("dot")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("cx", function (d) { return x(d.Dalc); } )
+                .attr("cy", function (d) { return y(d.Grade); } )
+                .attr("r", 7)
+                .style("fill", function (d) { return color(d.Sex) } )
+                .on("mouseover", mouseover)
+                .on("mousemove", mousemove)
+                .on("mouseleave", mouseleave)
+                .call(DV_Annotation_const)
+      })
+
+    </script>
+
+  </div>
+
+
+  <div id="piyush_dv_1" class="step">
+    <div class="numbertext"></div>
+    <h2>Scene:2/4 | AbsencesVSGrades</h2>
+    <p> Tooltip – hover over circles in Scatterplot to see details on demand, Tooltip pops up at bottom</p>
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <script>
+
+      var svg1 = d3.select("#piyush_dv_1")
+              .append("svg")
+              .attr("width", width + margin.left + margin.right)
+              .attr("height", height + margin.top + margin.bottom)
+              .append("g")
+              .attr("transform","translate(" + margin.left + "," + margin.top + ")");
+
+
+      d3.csv("https://raw.githubusercontent.com/pkatre2/Final_DV_project/main/GradesVSAbsences_Sheet.csv", function(data) {
+        //d3.csv("GradesVSAbsences_Sheet.csv", function(data) {
+        var x = d3.scaleLinear()
+                .domain([0, 16])
+                .range([ 0, width ]);
+        svg1.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x));
+
+
+        var y = d3.scaleLinear()
+                .domain([0, 14])
+                .range([ height, 0]);
+        svg1.append("g")
+                .call(d3.axisLeft(y));
+
+        var color = d3.scaleOrdinal()
+                .domain(["F", "M" ])
+                .range([ "Maroon", "orange"])
+
+        svg1.append("text")
+                .attr("text-anchor", "end")
+                .attr("x", width/2 + margin.left)
+                .attr("y", height + margin.top + 20)
+                .text("Final Grades");
+
+        svg1.append("text")
+                .attr("text-anchor", "end")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -margin.left + 70)
+                .attr("x", -margin.top - height/2 + 20)
+                .text("Absences")
+
+
+        var Tooltip1 = d3.select("#piyush_dv_1")
+                .append("div")
+                .style("opacity", 0)
+                .attr("class", "tooltip")
+                .style("background-color", "white")
+                .style("border", "solid")
+                .style("border-width", "2px")
+                .style("border-radius", "5px")
+                .style("padding", "5px")
+
+        var mousemove = function(d) {
+          Tooltip1
+                  .style("opacity", 1)
+          d3.select(this).transition
+                  .style("stroke", "black")
+                  .style("opacity", 1)
+        }
+        var mouseover = function(d) {
+          Tooltip1
+                  .text("Age:"+d.Age+"|Sex:"+d.Sex +"|Grade:"+d.Grade+"|Avg. Absences:"+d.Absences+"|Total Failures:"+d.Failures)
+                  .style("top",  (d3.mouse(this)[1]) + "px")
+                  .style("right", (d3.mouse(this)[0]) + "px")
+        }
+        var mouseleave = function(d) {
+          Tooltip1
+                  .style("opacity", 0)
+          d3.select(this)
+                  .style("stroke", "none")
+                  .style("opacity", 0.8)
+        }
+
+
+        const DV_Annotation_1 = [
+          {
+            note: {
+              label: "",
+              title: "Girls are Smart:decreasing Absences and better Grades as they Age"
+            },
+            type: d3.annotationCalloutRect,
+            subject: {
+              width: 60,
+              height: 250
+            },
+            x: 440,
+            y: 320,
+            dy: -180,
+            dx: -350
+          }
+        ]
+
+
+
+        // Add annotation to the chart
+        const DV_Annotation_const_1 = d3.annotation()
+                .annotations(DV_Annotation_1)
+        svg1
+                .append("g")
+                .call(DV_Annotation_const_1)
+
+
+        // Handmade legend
+        svg1.append("circle").attr("cx",450).attr("cy",30).attr("r", 7).style("fill", "Maroon")
+        svg1.append("circle").attr("cx",450).attr("cy",60).attr("r", 7).style("fill", "orange")
+        svg1.append("text").attr("x", 470).attr("y", 30).text("Female").style("font-size", "15px").attr("alignment-baseline","Right")
+        svg1.append("text").attr("x", 470).attr("y", 60).text("Male").style("font-size", "15px").attr("alignment-baseline","Right")
+
+        svg1.append('g')
+                .selectAll("dot")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("cx", function (d) { return x(d.Grade); } )
+                .attr("cy", function (d) { return y(d.Absences); } )
+                .attr("r", 7)
+                .style("fill", function (d) { return color(d.Sex) } )
+                .on("mouseover", mouseover)
+                .on("mousemove", mousemove)
+                .on("mouseleave", mouseleave)
+                .call(DV_Annotation_const_1)
+
+
+      })
+
+    </script>
+  </div>
+</div>
+
+
+
+<div id="piyush_dv_2" class="step">
+  <div class="numbertext"></div>
+  <h2>Scene:3/4 | Absences by Age and Living Area for Female</h2>
+  <h6><button onclick="update('Rural_Absences')">Rural_Absences</button>
+      <button onclick="update('Urban_Absences')">Urban_Absences</button>
+  </h6>
+
+  <script src="https://d3js.org/d3.v4.js"></script>
+  <script>
+
+   var svg4 = d3.select("#piyush_dv_2")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")");
+
+
+    var x = d3.scaleBand()
+            .range([ 0, width ])
+            .padding(0.2);
+    var xAxis = svg4.append("g")
+            .attr("transform", "translate(0," + height + ")")
+
+
+    var y = d3.scaleLinear()
+            .range([ height, 0]);
+    var yAxis = svg4.append("g")
+            .attr("class", "myYaxis")
+
+
+    svg4.append("text")
+            .attr("text-anchor", "end")
+            .attr("x", width/2 + margin.left)
+            .attr("y", height + margin.top + 20)
+            .text("Age");
+
+
+    svg4.append("text")
+            .attr("text-anchor", "end")
+            .attr("transform", "rotate(-90)")
+            .attr("y", -margin.left + 70)
+            .attr("x", -margin.top - height/2 + 20)
+            .text("Absences")
+
+    function update(Var) {
+
+      d3.csv("https://raw.githubusercontent.com/pkatre2/Final_DV_project/main/Address_VS_Absence_Female_Sheet.csv", function(data) {
+
+        x.domain(data.map(function(d) { return d.Age; }))
+        xAxis.transition().duration(1000).call(d3.axisBottom(x))
+
+        y.domain([0, d3.max(data, function(d) { return +d[Var] }) ]);
+        yAxis.transition().duration(1000).call(d3.axisLeft(y));
+
+        var bar = svg4.selectAll("rect")
+                .data(data)
+
+        bar
+                .enter()
+                .append("rect")
+                .merge(bar)
+                .transition()
+                .duration(1000)
+                .attr("x", function(d) { return x(d.Age); })
+                .attr("y", function(d) { return y(d[Var]); })
+                .attr("width", x.bandwidth())
+                .attr("height", function(d) { return height - y(d[Var]); })
+                .attr("fill", "#69b3a2")
+      })
+
+    }
+
+    update('Rural_Absences')
+
+  </script>
+</div>
+
+
+</div>
+
+
+
+
+
+<div id="piyush_dv_3" class="step">
+  <div class="numbertext"></div>
+  <h2>Scene:4/4 | Absences by Age and Living Area for Male</h2>
+  <h6><button onclick="update1('Rural_Absences')">Rural_Absences</button>
+    <button onclick="update1('Urban_Absences')">Urban_Absences</button>
+  </h6>
+  <script src="https://d3js.org/d3.v4.js"></script>
+  <script>
+
+
+    var svg5 = d3.select("#piyush_dv_3")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")")
+
+            ;
+    var x = d3.scaleBand()
+            .range([ 0, width ])
+            .padding(0.2);
+    var xAxis1 = svg5.append("g")
+            .attr("transform", "translate(0," + height + ")")
+
+
+    var y = d3.scaleLinear()
+            .range([ height, 0]);
+    var yAxis1 = svg5.append("g")
+            .attr("class", "myYaxis")
+
+
+    svg5.append("text")
+            .attr("text-anchor", "end")
+            .attr("x", width/2 + margin.left)
+            .attr("y", height + margin.top + 20)
+            .text("Age");
+
+
+    svg5.append("text")
+            .attr("text-anchor", "end")
+            .attr("transform", "rotate(-90)")
+            .attr("y", -margin.left + 70)
+            .attr("x", -margin.top - height/2 + 20)
+            .text("Absences")
+
+
+  function update1(Var1) {
+
+    d3.csv("https://raw.githubusercontent.com/pkatre2/Final_DV_project/main/Address_VS_Absence_Male_Sheet.csv", function(data) {
+
+
+        x.domain(data.map(function(d) { return d.Age; }))
+        xAxis1.transition().duration(1000).call(d3.axisBottom(x))
+
+
+        y.domain([0, d3.max(data, function(d) { return +d[Var1] }) ]);
+        yAxis1.transition().duration(1000).call(d3.axisLeft(y));
+
+
+        var bar1 = svg5.selectAll("rect")
+                .data(data)
+
+
+      bar1
+                .enter()
+                .append("rect")
+                .merge(bar1)
+                .transition()
+                .duration(1000)
+                .attr("x", function(d) { return x(d.Age); })
+                .attr("y", function(d) { return y(d[Var1]); })
+                .attr("width", x.bandwidth())
+                .attr("height", function(d) { return height - y(d[Var1]); })
+                .attr("fill", "#69b3a2")
+
+      })
+
+    }
+
+
+    update1('Rural_Absences')
+
+  </script>
+</div>
+
+
+</div>
+
+<button class="w3-button w3-black w3-display-left" onclick="AdvanceSlide(-1)">&#10094;</button>
+<button class="w3-button w3-black w3-display-right" onclick="AdvanceSlide(1)">&#10095;</button>
+
+</div>
+
+<script>
+  var slideNo = 1;
+  DisplaySlide(slideNo);
+
+  function AdvanceSlide(n) {
+    DisplaySlide(slideNo += n);
+  }
+  function DisplaySlide(n) {
+    var i;
+    var x = document.getElementsByClassName("step");
+    if (n > x.length) {slideNo = 1}
+    if (n < 1) {slideNo = x.length}
+    for (i = 0; i < x.length; i++) {
+      x[i].style.display = "none";
+    }
+    x[slideNo-1].style.display = "block";
+  }
+</script>
+</body>
+</html>
